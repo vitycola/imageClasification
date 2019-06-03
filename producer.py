@@ -20,7 +20,7 @@ pathImages = "/Users/victor/PycharmProjects/imagesPrediction/resources/photo/"
 # Aqui se debe obtener la lista de imagenes de la ruta que se especifique
 listaImagenes = listdir(pathImages)
 #Declaramos el productor de Kafka
-producer=KafkaProducer(bootstrap_servers=['localhost:9092'])
+producer=KafkaProducer(value_serializer=lambda v:json.dumps(v).encode('utf-8'),bootstrap_servers=['localhost:9092'])
 # Aqui se debe recorrer la la lista de imagenes obtenida en el punto anterior con un bucle
 for imagen in listaImagenes:
     # Dentro del bucle, para cada imagen se debe leer la imagen
@@ -30,7 +30,7 @@ for imagen in listaImagenes:
     # Opcional: mostrar la imagen
     #imageFinal.show()
     # Una vez este la imagen lista se debe enviar a kafka
-    producer.send('topic1',bytes(imageFinal.getdata()))
+    producer.send('topic1',{"name":str(imagen),"data" : ','.join(str(e) for e in list((imageFinal.getdata())))})
     # Tiempo de espera de X segundos entre foto y foto
     time.sleep(5) # espera en segundos
 

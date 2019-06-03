@@ -1,8 +1,9 @@
 from pyspark.sql import SparkSession
 from pyspark.ml.linalg import VectorUDT, Vectors
 from pyspark.sql.functions import split
-from pyspark.sql.functions import udf
+from pyspark.sql.functions import udf,col,from_json
 from pyspark.ml.classification import RandomForestClassificationModel
+from pyspark.sql.types import StructType,StringType,StructField,ArrayType
 
 import os
 packages = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.1"
@@ -20,14 +21,20 @@ dataStream = spark.readStream.format("kafka")\
     .option("subscribe","topic1")\
     .load()
 
-decodificar = udf(lambda a: ','.join(str(e) for e in list(a)))
-df = dataStream.select(decodificar(dataStream["value"]).alias("values"))
+schema = StructType([
+    StructField("name", StringType(), True),
+    StructField("data", StringType(), True)]
+)
+df = dataStream.selectExpr("CAST(value AS STRING) as json")\
+ .select(from_json(col("json"),schema).alias("message"))\
+ .select("message.*")
 
 parse_ = udf(lambda a: Vectors.dense(a), VectorUDT())
-df2 = df.select(split(df["values"],",").cast("array<int>").alias("pixels")).withColumn("pixels", parse_("pixels"))
+df2 = df.select("name",split(df["data"],",").cast("array<int>").alias("pixels"))\
+    .withColumn("pixels", parse_("pixels"))
 
 predict = model.transform(df2)\
-.select("pixels","prediction","rawPrediction","probability")
+.select("name","pixels","prediction")
 
 query = predict.writeStream.format("console").start()
 #query = assemmbledDF.writeStream.format("csv").outputMode("append")\
