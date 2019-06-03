@@ -22,18 +22,13 @@ df2 = df.select(split(df["pixels"]," ").cast("array<int>").alias("pixels"),"emot
 
 dfSample = df2.sample(False,0.4,5)
 
-pixelColumns = dfSample.columns
-pixelColumns.remove("emotion")
-
 train, test = dfSample.randomSplit([0.7, 0.3])
 
 rf = RandomForestClassifier(labelCol="emotion", featuresCol="pixels", numTrees=20)
 
-
 model = rf.fit(train)
 
 predictions = model.transform(test)
-
 
 #Precision del algoritmo
 evaluator = MulticlassClassificationEvaluator(
@@ -41,8 +36,6 @@ evaluator = MulticlassClassificationEvaluator(
 accuracy = evaluator.evaluate(predictions)
 print("Test Error = %g" % (1.0 - accuracy))
 
-
-
 #Guardar algoritmo que mejor resultado de para usarlo en el streaming
-model.write.overwrite().save("/Users/victor/PycharmProjects/imagesPrediction/models/randomForest")
+model.write().overwrite().save("/Users/victor/PycharmProjects/imagesPrediction/models/randomForest")
 
