@@ -1,0 +1,1 @@
+spark-submit --deploy-mode client TrainModelImages.py

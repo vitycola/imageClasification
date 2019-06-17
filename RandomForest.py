@@ -37,5 +37,5 @@ accuracy = evaluator.evaluate(predictions)
 print("Test Error = %g" % (1.0 - accuracy))
 
 #Guardar algoritmo que mejor resultado de para usarlo en el streaming
-model.write().overwrite().save("/Users/victor/PycharmProjects/imagesPrediction/models/randomForest")
+model.write().overwrite().save("/Users/victor/PycharmProjects/imagesPrediction/modelsTL/randomForest")
 

@@ -1,9 +1,10 @@
 from pyspark.sql import SparkSession
 from pyspark.ml.linalg import VectorUDT, Vectors
 from pyspark.sql.functions import split
+from pyspark.ml import Pipeline
 from pyspark.sql.functions import udf,col,from_json
-from pyspark.ml.classification import RandomForestClassificationModel
-from pyspark.sql.types import StructType,StringType,StructField,ArrayType
+from pyspark.ml.classification import RandomForestClassificationModel,LogisticRegressionModel
+from pyspark.sql.types import StructType,StringType,StructField
 
 import os
 packages = "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.1"
@@ -14,7 +15,7 @@ os.environ["PYSPARK_SUBMIT_ARGS"] = (
 
 spark = SparkSession.builder.appName("StreamingPrediction").getOrCreate()
 
-model = RandomForestClassificationModel.load("/Users/victor/PycharmProjects/imagesPrediction/models/randomForest")
+model = LogisticRegressionModel.load("/Users/victor/PycharmProjects/imagesPrediction/modelsTL/logisticRegression")
 
 dataStream = spark.readStream.format("kafka")\
     .option("kafka.bootstrap.servers","localhost:9092")\
@@ -30,11 +31,11 @@ df = dataStream.selectExpr("CAST(value AS STRING) as json")\
  .select("message.*")
 
 parse_ = udf(lambda a: Vectors.dense(a), VectorUDT())
-df2 = df.select("name",split(df["data"],",").cast("array<int>").alias("pixels"))\
-    .withColumn("pixels", parse_("pixels"))
+df2 = df.select("name",split(df["data"],",").cast("array<int>").alias("features"))\
+    .withColumn("features", parse_("features"))
 
 predict = model.transform(df2)\
-.select("name","pixels","prediction")
+.select("name","features","prediction")
 
 query = predict.writeStream.format("console").start()
 #query = assemmbledDF.writeStream.format("csv").outputMode("append")\
